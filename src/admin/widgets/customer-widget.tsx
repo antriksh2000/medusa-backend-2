@@ -4,7 +4,6 @@ import { DetailWidgetProps, AdminCustomer } from "@medusajs/framework/types";
 import { useState } from "react";
 
 const CustomerWidget = ({ data }: DetailWidgetProps<AdminCustomer>) => {
-  console.log(data);
 
   const [vatNo, setVatNo] = useState(data?.metadata?.vat_no ?? "");
 
@@ -47,7 +46,7 @@ const CustomerWidget = ({ data }: DetailWidgetProps<AdminCustomer>) => {
           placeholder="VAT"
           className="border border-gray-300 rounded-lg p-2"
           value={vatNo as string}
-          onChange={(e) => setVatNo(e.target.value)} // Updates state when user types
+          onChange={(e) => setVatNo(e.target.value)} 
         />
         <button className="bg-blue-200 p-3 rounded-lg" onClick={updateVAT}>
           Submit
