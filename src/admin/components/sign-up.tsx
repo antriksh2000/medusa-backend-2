@@ -100,12 +100,6 @@ export default function SignUpForm() {
       toast.info("Error", { description: "Please fill in all fields." });
       return;
     }
-
-    console.log("Selected Customer:", selectedCustomer);
-    console.log("Selected Email:", selectedEmail);
-    console.log("Selected Product:", selectedProduct.title);
-    console.log("Selected Variant:", selectedVariant);
-    console.log("Selected Password:", password);
   };
 
   return (
@@ -139,7 +133,6 @@ export default function SignUpForm() {
           </DropdownMenu>
         </div>
 
-        {/* Product Dropdown */}
         <div>
           <DropdownMenu>
             <DropdownMenu.Trigger>
@@ -186,18 +179,6 @@ export default function SignUpForm() {
             </DropdownMenu>
           </div>
         )}
-
-        {/* Password Input */}
-        <div>
-          <input
-            type="password"
-            placeholder="Enter Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
-
         <Button type="submit" variant="primary" className="w-full">
           Submit
         </Button>
