@@ -1,6 +1,6 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import DrawerComponent from "../components/drawer";
-import SignUpForm from "../components/sign-up";
+import SignUpForm from "../components/create-order";
 
 
 const SignupWidget = () => {
