@@ -1,13 +1,10 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import { Button } from "@medusajs/ui";
-import { DetailWidgetProps, AdminProduct } from "@medusajs/framework/types";
 import DrawerComponent from "../components/drawer";
 import OrderForm from "../components/create-order";
 
-const CreatetWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
-  console.log(data);
+const CreatetWidget = () => {
   return (
-    <div className="flex items-center justify-end py-4">
+    <div className="flex items-center justify-end">
       <DrawerComponent title="Create Order" content={<OrderForm />} />
     </div>
   );

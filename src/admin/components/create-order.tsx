@@ -1,37 +1,33 @@
 import { useState, useEffect } from "react";
-import {
-  Button,
-  Container,
-  DropdownMenu,
-  Heading,
-  Input,
-  toast,
-} from "@medusajs/ui";
-
+import { Button, DropdownMenu, Heading, Input, toast } from "@medusajs/ui";
+import MultiSelectDropdown from "./MultiDropdown";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 export default function OrderForm() {
-  // State for customers, products, and variants
   const [customers, setCustomers] = useState<
     { id: string; first_name: string; last_name: string; email: string }[]
   >([]);
   const [products, setProducts] = useState<{ id: string; title: string }[]>([]);
-  const [variants, setVariants] = useState<
-    { title: string; sku: string; id: string }[]
+
+  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<
+    { id: string; title: string; variants?: any }[]
   >([]);
 
-  // Selected values
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
-  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
-  const [selectedVariantTitle, setSelectedVariantTitle] = useState<
-    string | null
-  >(null);
+  const [searchCustomer, setSearchCustomer] = useState<string>("");
+  const [searchProduct, setSearchProduct] = useState<string>("");
+  const [regionId, setRegionId] = useState<string>("");
+
+  const [selectedVariant, setSelectedVariant] = useState<
+    {
+      selectedProductId: string;
+      selectedVariantTitle: string;
+      variantId: string;
+    }[]
+  >([]);
   const [showShippingForm, setShowShippingForm] = useState(false);
 
-  // Shipping address state
   const [shippingAddress, setShippingAddress] = useState({
     first_name: "",
     last_name: "",
@@ -45,12 +41,38 @@ export default function OrderForm() {
   });
 
   useEffect(() => {
+    const fetchRegion = async () => {
+      try {
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_BACKEND_API_URL
+          }admin/regions/?limit=40&offset=0`,
+          {
+            headers: { "Content-Type": "application/json" },
+            method: "GET",
+          }
+        );
+        const data = await response.json();
+        if (response.ok) setRegionId(data?.regions?.[0].id);
+        else toast.error("Failed to fetch regions");
+      } catch (error) {
+        toast.error("Unexpected error occurred");
+      }
+    };
+    fetchRegion();
+  }, []);
+  useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await fetch("http://localhost:9000/admin/customers", {
-          headers: { "Content-Type": "application/json" },
-          method: "GET",
-        });
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_BACKEND_API_URL
+          }admin/customers?limit=40&offset=0&q=${searchCustomer}`,
+          {
+            headers: { "Content-Type": "application/json" },
+            method: "GET",
+          }
+        );
         const data = await response.json();
         if (response.ok) setCustomers(data.customers);
         else toast.error("Failed to fetch customers");
@@ -59,12 +81,21 @@ export default function OrderForm() {
       }
     };
 
+    fetchCustomers();
+  }, [searchCustomer]);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("http://localhost:9000/admin/products", {
-          headers: { "Content-Type": "application/json" },
-          method: "GET",
-        });
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_BACKEND_API_URL
+          }admin/products?limit=40&offset=0&q=${searchProduct}`,
+          {
+            headers: { "Content-Type": "application/json" },
+            method: "GET",
+          }
+        );
         const data = await response.json();
         if (response.ok) setProducts(data.products);
         else toast.error("Failed to fetch products");
@@ -72,46 +103,19 @@ export default function OrderForm() {
         toast.error("Unexpected error occurred");
       }
     };
-
-    fetchCustomers();
     fetchProducts();
-  }, []);
+  }, [searchProduct]);
 
-  // Fetch variants when a product is selected
-  useEffect(() => {
-    if (!selectedProduct) return;
-    const fetchVariants = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:9000/admin/products/${selectedProduct.id}/variants`,
-          {
-            headers: { "Content-Type": "application/json" },
-            method: "GET",
-          }
-        );
-        const data = await response.json();
-        if (response.ok) setVariants(data.variants);
-        else toast.error("Failed to fetch variants");
-      } catch (error) {
-        toast.error("Unexpected error occurred");
-      }
-    };
-    fetchVariants();
-  }, [selectedProduct]);
-
-  // Handle variant selection and show shipping form
-  const handleVariantSelect = (variantId: string) => {
-    setSelectedVariant(variantId);
-    setShowShippingForm(true);
-  };
-
-  // Handle shipping form input changes
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setShippingAddress((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit shipping & send to cart API
+  const items = selectedVariant.map((variant) => ({
+    variant_id: variant.variantId,
+    quantity: 1,
+  }));
+
   const handleShippingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -122,13 +126,13 @@ export default function OrderForm() {
       toast.error("Please fill in required fields.");
       return;
     }
-    if (!selectedCustomer || !selectedVariant) {
-      toast.error("Customer and Variant are required.");
+    if (!selectedCustomer) {
+      toast.error("Customer and product and variant are required.");
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:9000/store/carts", {
+      await fetch(`${import.meta.env.VITE_BACKEND_API_URL}store/carts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,29 +140,59 @@ export default function OrderForm() {
             "pk_2a0920f648401e883b892b7dde36d24a700b5964d836ab18c6ab1c8ac1822dd1",
         },
         body: JSON.stringify({
-          region_id: "reg_01JMZ5ZCB2A15DN53A4MR0SG2B",
+          region_id: regionId,
           email: selectedCustomer,
-          items: [{ variant_id: selectedVariant, quantity: 1 }],
+          items: items,
           shipping_address: shippingAddress,
         }),
       });
-
-      const data = await response.json();
-      if (response.ok) {
-        toast.success("Shipping address saved & Item added to cart!");
-        console.log("Cart API Response:", data);
-      } else {
-        toast.error("Failed to add to cart");
-      }
-    } catch (error) {
-      toast.error("Unexpected error occurred");
-    }
+    } catch (error) {}
   };
 
+  const handleVariantSelect = (
+    productId: string,
+    variantTitle: string,
+    variantId: string
+  ) => {
+    setSelectedVariant((prev) => {
+      const existingIndex = prev.findIndex(
+        (item) => item.selectedProductId === productId
+      );
+
+      if (existingIndex !== -1) {
+        const updatedVariants = [...prev];
+        updatedVariants[existingIndex] = {
+          selectedProductId: productId,
+          selectedVariantTitle: variantTitle,
+          variantId: variantId,
+        };
+
+        return updatedVariants;
+      } else {
+        return [
+          ...prev,
+          {
+            selectedProductId: productId,
+            selectedVariantTitle: variantTitle,
+            variantId: variantId,
+          },
+        ];
+      }
+    });
+    setShowShippingForm(true);
+  };
+
+  const settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: true,
+  };
   return (
-    <Container className="p-8 max-w-md mx-auto">
-      <div className=" flex flex-col gap-4">
-        {/* Customer Selection */}
+    <div className="min-h-screen pl-20 flex flex-col overflow-x-scroll ">
+      <div className="max-w-2xl flex flex-col gap-4">
         <div>
           <DropdownMenu>
             <DropdownMenu.Trigger>
@@ -176,54 +210,81 @@ export default function OrderForm() {
             </DropdownMenu.Content>
           </DropdownMenu>
         </div>
-
-        {/* Product Selection */}
         <div>
-          <DropdownMenu>
-            <DropdownMenu.Trigger>
-              Product: {selectedProduct?.title || "Select Product"}
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
-              {products.map((product) => (
-                <DropdownMenu.Item
-                  key={product.id}
-                  onSelect={() => setSelectedProduct(product)}
-                >
-                  {product.title}
-                </DropdownMenu.Item>
-              ))}
-            </DropdownMenu.Content>
-          </DropdownMenu>
+          <MultiSelectDropdown
+            options={products}
+            setSelectedProducts={setSelectedProducts}
+            search={searchProduct}
+            setSearch={setSearchProduct}
+          />
         </div>
+        <div className="flex flex-col">
+          <div className="grid grid-cols-3 gap-4">
+            {selectedProducts?.map((product) => (
+              <div key={product.id} className="mb-2">
+                <div className="mt-2">
+                  <Slider {...settings} className="w-full mb-8">
+                    {Array.isArray((product as any).images) &&
+                    (product as any).images.length > 0 ? (
+                      (product as any).images.map(
+                        (variant: any, index: number) => (
+                          <div key={index} className="p-2">
+                            <img
+                              src={variant.url}
+                              alt={`Product ${index}`}
+                              className="w-full h-40 object-contain rounded-md shadow-md"
+                            />
+                          </div>
+                        )
+                      )
+                    ) : (
+                      <p className="text-center">No images</p>
+                    )}
+                  </Slider>
+                </div>
+                <span className="font-semibold pt-2">{product.title}:</span>
+                <h3 className="mb-2">Size</h3>
 
-        {/* Variant Selection */}
-        <div>
-          {selectedProduct && (
-            <DropdownMenu>
-              <DropdownMenu.Trigger>
-                Variant: {selectedVariantTitle || "Select Variant"}
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content>
-                {variants.map((variant) => (
-                  <DropdownMenu.Item
-                    key={variant.id}
-                    onSelect={() => {
-                      handleVariantSelect(variant.id);
-                      setSelectedVariantTitle(variant.title);
-                    }}
-                  >
-                    {variant.title}
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Content>
-            </DropdownMenu>
-          )}
+                <div className="grid grid-cols-3 gap-2">
+                  {product.variants.map((variant: any) => {
+                    const isSelected = selectedVariant.find(
+                      (item) =>
+                        item.selectedProductId === product.id &&
+                        item.variantId === variant.id
+                    );
+
+                    return (
+                      <button
+                        key={variant.id}
+                        name={`variant-${product.id}`}
+                        value={variant.title}
+                        onClick={() =>
+                          handleVariantSelect(
+                            product.id,
+                            variant.title,
+                            variant.id
+                          )
+                        }
+                        className={`cursor-pointer border border-gray-300 rounded-md p-2 text-center ${
+                          isSelected ? "bg-blue-500 text-white" : ""
+                        } hover:bg-blue-500 hover:text-white`}
+                      >
+                        {variant.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Shipping Address Form */}
       {showShippingForm && (
-        <form className="space-y-4 mt-6" onSubmit={handleShippingSubmit}>
+        <form
+          className=" space-y-4 mt-6 max-w-2xl"
+          onSubmit={handleShippingSubmit}
+        >
           <Heading level="h3">Shipping Address</Heading>
           <Input
             type="text"
@@ -288,6 +349,6 @@ export default function OrderForm() {
           </Button>
         </form>
       )}
-    </Container>
+    </div>
   );
 }

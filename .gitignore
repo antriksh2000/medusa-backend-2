@@ -18,6 +18,7 @@ build
 
 .env
 .env_local
+.env.test
 .env_template
 .yarn/*
 !.yarn/patches

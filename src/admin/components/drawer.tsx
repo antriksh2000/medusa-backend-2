@@ -1,30 +1,26 @@
-import { Button, Drawer } from "@medusajs/ui";
+import { Button, FocusModal } from "@medusajs/ui";
 
 type DrawerComponentProps = {
   title: string;
-  content: any
+  content: any;
 };
 
-export default function DrawerComponent({
-  title,
-  content,
-}: DrawerComponentProps) {
+export default function DrawerComponent({ content }: DrawerComponentProps) {
   return (
-    <Drawer>
-      <Drawer.Trigger asChild>
-        <Button variant="secondary">{title}</Button>
-      </Drawer.Trigger>
-      <Drawer.Content>
-        <Drawer.Header>
-          <Drawer.Title>{title}</Drawer.Title>
-        </Drawer.Header>
-        <Drawer.Body className="p-4">{content}</Drawer.Body>
-        <Drawer.Footer>
-          <Drawer.Close asChild>
-            <Button variant="secondary">Cancel</Button>
-          </Drawer.Close>
-        </Drawer.Footer>
-      </Drawer.Content>
-    </Drawer>
+    <FocusModal>
+      <FocusModal.Trigger asChild>
+        <Button>Edit Variant</Button>
+      </FocusModal.Trigger>
+      <FocusModal.Content>
+        <FocusModal.Header>
+          <Button>Save</Button>
+        </FocusModal.Header>
+        <FocusModal.Body className="flex overflow-y-scroll flex-col py-16">
+          <div className="flex w-full flex-col gap-y-8">
+            <div>{content}</div>
+          </div>
+        </FocusModal.Body>
+      </FocusModal.Content>
+    </FocusModal>
   );
 }

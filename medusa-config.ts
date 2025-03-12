@@ -4,6 +4,8 @@ loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
 module.exports = defineConfig({
   projectConfig: {
+    redisUrl: 'redis://default:gDEL8qWTm7AWVOzD2oAC1VTlDMPB5pHd@redis-12595.c267.us-east-1-4.ec2.redns.redis-cloud.com:12595',
+    
     databaseUrl: process.env.DATABASE_URL,
     databaseDriverOptions: {
       connection: {
@@ -20,4 +22,13 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     },
   },
+  modules: [
+    {
+      resolve: "@medusajs/medusa/event-bus-redis",
+      options: { 
+        redisUrl: "redis://default:gDEL8qWTm7AWVOzD2oAC1VTlDMPB5pHd@redis-12595.c267.us-east-1-4.ec2.redns.redis-cloud.com:12595",
+      },
+    },
+  ],
+
 });
