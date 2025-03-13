@@ -132,20 +132,23 @@ export default function OrderForm() {
     }
 
     try {
-      await fetch(`${import.meta.env.VITE_BACKEND_API_URL}store/carts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-publishable-api-key":
-            "pk_2a0920f648401e883b892b7dde36d24a700b5964d836ab18c6ab1c8ac1822dd1",
-        },
-        body: JSON.stringify({
-          region_id: regionId,
-          email: selectedCustomer,
-          items: items,
-          shipping_address: shippingAddress,
-        }),
-      });
+      await fetch(
+        `${import.meta.env.VITE_BACKEND_API_URL}admin/manual-orders`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-publishable-api-key":
+              "pk_2a0920f648401e883b892b7dde36d24a700b5964d836ab18c6ab1c8ac1822dd1",
+          },
+          body: JSON.stringify({
+            region_id: regionId,
+            email: selectedCustomer,
+            items: items,
+            shipping_address: shippingAddress,
+          }),
+        }
+      );
     } catch (error) {}
   };
 
