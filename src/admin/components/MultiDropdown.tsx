@@ -58,7 +58,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className="w-full relative " style={{minWidth:'600px'}} ref={dropdownRef}>
       <button
         className="w-full p-2 border rounded-lg flex justify-between items-center bg-white shadow-sm"
         onClick={toggleDropdown}
@@ -72,7 +72,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute w-full mt-2 bg-white border rounded-lg shadow-lg z-10">
+        <div className="min-w-2xl absolute w-full mt-2 bg-white border rounded-lg shadow-lg z-10">
           <input
             type="text"
             className="w-full p-2 border-b focus:outline-none"
