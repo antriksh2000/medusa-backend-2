@@ -1,35 +1,75 @@
 import { SubscriberArgs, type SubscriberConfig } from "@medusajs/framework";
 import { Modules } from "@medusajs/framework/utils";
 
+/**
+ * Handles the promotion check for newly created customers.
+ */
 export default async function customerCreatedCheckPromotion({
   event,
   container,
-}) {
-  const cust_id = event.data.id;
+}: SubscriberArgs<{ id: string }>): Promise<void> {
+  try {
+    const cust_id = event.data.id;
 
-  const query = container.resolve("query");
+    const query = container.resolve("query");
 
-  const {
-    data: [custdata],
-  } = await query.graph({
-    entity: "customer",
-    fields: ["*"],
-    filters: {
-      id: [cust_id],
-    },
-  });
+    // Fetch customer data by ID
+    const {
+      data: [custData],
+    } = await query.graph({
+      entity: "customer",
+      fields: ["*"],
+      filters: {
+        id: [cust_id],
+      },
+    });
 
-  console.log(custdata);
+    if (!custData) {
+      console.error(`Customer with ID ${cust_id} not found.`);
+      return;
+    }
 
-  if (custdata.email && custdata.email.endsWith("@beneki.net")) {
-    const customerModuleService = container.resolve(Modules.CUSTOMER);
-    const customerGroupCustomerId =
-      await customerModuleService.addCustomerToGroup({
-        customer_id: cust_id,
-        customer_group_id: "cusgroup_01JNKMGW4QE3H38VS1CS75QC5A",
+    // console.log("Customer Data:", custData);
+
+    // Check if the customer has an email and if it matches the expected domain
+    if (custData.email?.endsWith("@beneki.net")) {
+      const customerModuleService = container.resolve(Modules.CUSTOMER);
+
+      // Fetch customer group data
+      const {
+        data: [customerGroupData],
+      } = await query.graph({
+        entity: "customer_group",
+        fields: ["*"],
+        filters: {
+          name: ["beneki group"],
+        },
       });
-  } else {
-    console.log("not a string ");
+
+      if (!customerGroupData) {
+        console.error(`Customer group "beneki group" not found.`);
+        return;
+      }
+
+      // console.log("Customer Group Data:", customerGroupData);
+
+      // Add the customer to the identified group
+      const customerGroupCustomerId =
+        await customerModuleService.addCustomerToGroup({
+          customer_id: cust_id,
+          customer_group_id: customerGroupData.id,
+        });
+
+      console.log(
+        `Customer with ID ${cust_id} added to group with ID ${customerGroupCustomerId}`
+      );
+    } else {
+      console.log(
+        `Customer with ID ${cust_id} does not have a valid email domain.`
+      );
+    }
+  } catch (error) {
+    console.error("Error processing customer promotion check:", error);
   }
 }
 
