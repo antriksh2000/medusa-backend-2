@@ -1,19 +1,42 @@
 import { useState, useEffect } from "react";
-import { Button, DropdownMenu, Heading, Input, toast } from "@medusajs/ui";
+import { Button, Heading, Input, toast } from "@medusajs/ui";
 import MultiSelectDropdown from "./MultiDropdown";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 export default function OrderForm() {
+  const [addresses, setAddresses] = useState<
+    {
+      phone: string;
+      province: string;
+      company: string;
+      country_code: string;
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      address_1: string;
+      city: string;
+      postal_code: string;
+    }[]
+  >([]);
+  const [products, setProducts] = useState<{ id: string; title: string }[]>([]);
   const [customers, setCustomers] = useState<
     { id: string; first_name: string; last_name: string; email: string }[]
   >([]);
-  const [products, setProducts] = useState<{ id: string; title: string }[]>([]);
 
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null
+  );
+  const [customerEmail, setSelectedCustomerEmail] = useState<string>("");
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
   const [selectedProducts, setSelectedProducts] = useState<
     { id: string; title: string; variants?: any }[]
   >([]);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [showAddressDropdown, setShowAddressDropdown] = useState(false);
 
   const [searchCustomer, setSearchCustomer] = useState<string>("");
   const [searchProduct, setSearchProduct] = useState<string>("");
@@ -61,6 +84,29 @@ export default function OrderForm() {
     };
     fetchRegion();
   }, []);
+
+  useEffect(() => {
+    const fetchCustomerAddresses = async () => {
+      try {
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_BACKEND_API_URL
+          }admin/customers/${selectedCustomerId}/addresses`,
+          {
+            headers: { "Content-Type": "application/json" },
+            method: "GET",
+          }
+        );
+        const data = await response.json();
+        if (response.ok) setAddresses(data?.addresses);
+        else toast.error("Failed to fetch regions");
+      } catch (error) {
+        toast.error("Unexpected error occurred");
+      }
+    };
+    fetchCustomerAddresses();
+  }, [selectedCustomerId]);
+
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
@@ -126,30 +172,42 @@ export default function OrderForm() {
       toast.error("Please fill in required fields.");
       return;
     }
-    if (!selectedCustomer) {
+    if (!customers) {
       toast.error("Customer and product and variant are required.");
       return;
     }
 
     try {
-      await fetch(
+      const data = await fetch(
         `${import.meta.env.VITE_BACKEND_API_URL}admin/manual-orders`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-publishable-api-key":
-              "pk_2a0920f648401e883b892b7dde36d24a700b5964d836ab18c6ab1c8ac1822dd1",
+              import.meta.env.VITE_X_PUBLISHABLE_API_KEY,
           },
           body: JSON.stringify({
             region_id: regionId,
-            email: selectedCustomer,
+            email: customerEmail,
             items: items,
             shipping_address: shippingAddress,
           }),
         }
       );
-    } catch (error) {}
+      if (data.ok) {
+        toast.success("Order created successfully");
+        setSelectedCustomerId(null);
+        setShowCustomerDropdown(true);
+        setSelectedVariant([]);
+        setShowShippingForm(false);
+        setSelectedProducts([]);
+      } else {
+        toast.error("Failed to create order");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleVariantSelect = (
@@ -193,26 +251,83 @@ export default function OrderForm() {
     slidesToScroll: 1,
     arrows: true,
   };
+
+  useEffect(() => {
+    if (selectedAddressId) {
+      const selectedAddress = addresses.find(
+        (address) => address.id === selectedAddressId
+      );
+      if (selectedAddress) {
+        setShippingAddress({
+          first_name: selectedAddress.first_name || "",
+          last_name: selectedAddress.last_name || "",
+          address_1: selectedAddress.address_1 || "",
+          company: selectedAddress.company || "",
+          postal_code: selectedAddress.postal_code || "",
+          city: selectedAddress.city || "",
+          country_code: selectedAddress.country_code || "",
+          province: selectedAddress.province || "",
+          phone: selectedAddress.phone || "",
+        });
+      }
+    }
+  }, [selectedAddressId, addresses]);
+
   return (
-    <div className="min-h-screen pl-20 flex flex-col overflow-x-scroll ">
-      <div className="max-w-2xl flex flex-col gap-4">
-        <div>
-          <DropdownMenu>
-            <DropdownMenu.Trigger>
-              Customer: {selectedCustomer || "Select Customer"}
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
+    <div className="min-w-2xl max-w-full min-h-screen pl-20 flex flex-col overflow-x-scroll ">
+      <div className="min-w-2xl max-w-2xl mx-auto flex flex-col gap-4">
+        <div className="min-w-2xl relative mt-5">
+          <Input
+            placeholder="Search Customer..."
+            value={
+              selectedCustomerId
+                ? (() => {
+                    const selectedCustomer = customers.find(
+                      (c) => c.id === selectedCustomerId
+                    );
+                    return selectedCustomer?.first_name?.trim() &&
+                      selectedCustomer?.last_name?.trim()
+                      ? `${selectedCustomer.first_name} ${selectedCustomer.last_name}`
+                      : selectedCustomer?.email || "";
+                  })()
+                : searchCustomer
+            }
+            onChange={(e) => {
+              setSearchCustomer(e.target.value);
+              setSelectedCustomerId(null);
+              setShowCustomerDropdown(true);
+            }}
+            className="min-w-2xl"
+            onFocus={() => setShowCustomerDropdown(true)}
+          />
+          {showCustomerDropdown && customers.length > 0 && (
+            <div className="w-2xl absolute bg-white border mt-1 w-full max-h-60 overflow-auto z-10 shadow-lg">
               {customers.map((customer) => (
-                <DropdownMenu.Item
+                <div
                   key={customer.id}
-                  onSelect={() => setSelectedCustomer(customer.email)}
+                  className="p-2 cursor-pointer hover:bg-gray-100"
+                  onClick={() => {
+                    setSelectedCustomerId(customer.id);
+                    setSelectedCustomerEmail(customer.email);
+                    setSearchCustomer("");
+                    setShowCustomerDropdown(false);
+                  }}
                 >
-                  {customer.first_name} {customer.last_name}
-                </DropdownMenu.Item>
+                  <span>
+                    {customer.first_name && customer.last_name
+                      ? customer.first_name + " " + customer.last_name
+                      : customer.email}{" "}
+                  </span>
+                  <br />
+                  <span className="text-sm text-gray-500">
+                    {customer.email}
+                  </span>
+                </div>
               ))}
-            </DropdownMenu.Content>
-          </DropdownMenu>
+            </div>
+          )}
         </div>
+
         <div>
           <MultiSelectDropdown
             options={products}
@@ -281,77 +396,139 @@ export default function OrderForm() {
             ))}
           </div>
         </div>
+        <div className="max-w-2xl">
+          {addresses.length > 0 && (
+            <div className="relative mt-5">
+              <h1>Select Address</h1>
+              <Input
+                placeholder="Select Address"
+                value={
+                  selectedCustomerId
+                    ? (() => {
+                        const selectedAddress = addresses.find(
+                          (c) => c.id === selectedAddressId
+                        );
+                        return selectedAddress?.first_name?.trim() &&
+                          selectedAddress?.last_name?.trim()
+                          ? `${selectedAddress.first_name} ${selectedAddress.last_name}`
+                          : selectedAddress?.email || "";
+                      })()
+                    : searchCustomer
+                }
+                onChange={(e) => {
+                  setSearchCustomer(e.target.value);
+                  setSelectedCustomerId(null);
+                  setShowAddressDropdown(true);
+                }}
+                onFocus={() => setShowAddressDropdown(true)}
+              />
+              {showAddressDropdown && customers.length > 0 && (
+                <div className="absolute bg-white border mt-1 w-full max-h-60 overflow-auto z-10 shadow-lg">
+                  {addresses.map((address) => (
+                    <div
+                      key={address.id}
+                      className="p-2 cursor-pointer hover:bg-gray-100"
+                      onClick={() => {
+                        setSelectedAddressId(address.id);
+                        setSearchCustomer("");
+                        setShowAddressDropdown(false);
+                      }}
+                    >
+                      <span>
+                        {address.first_name && address.last_name
+                          ? address.first_name + " " + address.last_name
+                          : address.email}
+                      </span>
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        {address.address_1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {showShippingForm && (
+          <form
+            className=" space-y-4 mt-6 max-w-2xl"
+            onSubmit={handleShippingSubmit}
+          >
+            <Heading level="h3">Shipping Address</Heading>
+            <Input
+              type="text"
+              name="first_name"
+              placeholder="First Name"
+              value={shippingAddress.first_name}
+              onChange={handleShippingChange}
+              required
+            />
+            <Input
+              type="text"
+              name="last_name"
+              placeholder="Last Name"
+              value={shippingAddress.last_name}
+              onChange={handleShippingChange}
+            />
+            <Input
+              type="text"
+              name="address_1"
+              placeholder="Address"
+              value={shippingAddress.address_1}
+              onChange={handleShippingChange}
+              required
+            />
+            <Input
+              type="text"
+              name="company"
+              placeholder="Company"
+              value={shippingAddress.company}
+              onChange={handleShippingChange}
+            />
+            <Input
+              type="text"
+              name="postal_code"
+              placeholder="Postal Code"
+              value={shippingAddress.postal_code}
+              onChange={handleShippingChange}
+            />
+            <Input
+              type="text"
+              name="city"
+              placeholder="City"
+              value={shippingAddress.city}
+              onChange={handleShippingChange}
+              required
+            />
+            <Input
+              type="text"
+              name="province"
+              placeholder="State/Province"
+              value={shippingAddress.province}
+              onChange={handleShippingChange}
+            />
+            <Input
+              type="text"
+              name="country_code"
+              placeholder="Country"
+              value={shippingAddress.country_code}
+              onChange={handleShippingChange}
+            />
+            <Input
+              type="text"
+              name="phone"
+              placeholder="Phone"
+              value={shippingAddress.phone}
+              onChange={handleShippingChange}
+            />
+
+            <Button type="submit" variant="primary" className="w-full">
+              Submit
+            </Button>
+          </form>
+        )}
       </div>
-
-      {showShippingForm && (
-        <form
-          className=" space-y-4 mt-6 max-w-2xl"
-          onSubmit={handleShippingSubmit}
-        >
-          <Heading level="h3">Shipping Address</Heading>
-          <Input
-            type="text"
-            name="first_name"
-            placeholder="First Name"
-            onChange={handleShippingChange}
-            required
-          />
-          <Input
-            type="text"
-            name="last_name"
-            placeholder="Last Name"
-            onChange={handleShippingChange}
-          />
-          <Input
-            type="text"
-            name="address_1"
-            placeholder="Address"
-            onChange={handleShippingChange}
-            required
-          />
-          <Input
-            type="text"
-            name="company"
-            placeholder="Company"
-            onChange={handleShippingChange}
-          />
-          <Input
-            type="text"
-            name="postal_code"
-            placeholder="Postal Code"
-            onChange={handleShippingChange}
-          />
-          <Input
-            type="text"
-            name="city"
-            placeholder="City"
-            onChange={handleShippingChange}
-            required
-          />
-          <Input
-            type="text"
-            name="province"
-            placeholder="State/Province"
-            onChange={handleShippingChange}
-          />
-          <Input
-            type="text"
-            name="country_code"
-            placeholder="Country"
-            onChange={handleShippingChange}
-          />
-          <Input
-            type="text"
-            name="phone"
-            placeholder="Phone"
-            onChange={handleShippingChange}
-          />
-
-          <Button type="submit" variant="primary" className="w-full">
-            Submit
-          </Button>
-        </form>
-      )}
     </div>
   );
 }
