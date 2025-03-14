@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Heading, Input, toast } from "@medusajs/ui";
+import { Button, Heading, Input, Label, Switch, toast } from "@medusajs/ui";
 import MultiSelectDropdown from "./MultiDropdown";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -62,6 +62,8 @@ export default function OrderForm() {
     province: "",
     phone: "",
   });
+
+  const [isDraft, setIsDraft] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchRegion = async () => {
@@ -127,7 +129,6 @@ export default function OrderForm() {
       }
     };
 
-    
     fetchCustomers();
   }, [searchCustomer]);
 
@@ -178,24 +179,24 @@ export default function OrderForm() {
       return;
     }
 
+    const apiUrl = isDraft
+      ? `${import.meta.env.VITE_BACKEND_API_URL}admin/draft-orders`
+      : `${import.meta.env.VITE_BACKEND_API_URL}admin/manual-orders`;
+
     try {
-      const data = await fetch(
-        `${import.meta.env.VITE_BACKEND_API_URL}admin/manual-orders`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key":
-              import.meta.env.VITE_X_PUBLISHABLE_API_KEY,
-          },
-          body: JSON.stringify({
-            region_id: regionId,
-            email: customerEmail,
-            items: items,
-            shipping_address: shippingAddress,
-          }),
-        }
-      );
+      const data = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-publishable-api-key": import.meta.env.VITE_X_PUBLISHABLE_API_KEY,
+        },
+        body: JSON.stringify({
+          region_id: regionId,
+          email: customerEmail,
+          items: items,
+          shipping_address: shippingAddress,
+        }),
+      });
       if (data.ok) {
         toast.success("Order created successfully");
         setSelectedCustomerId(null);
@@ -300,6 +301,7 @@ export default function OrderForm() {
             }}
             className="min-w-2xl"
             onFocus={() => setShowCustomerDropdown(true)}
+            onBlur={() => setShowCustomerDropdown(false)}
           />
           {showCustomerDropdown && customers.length > 0 && (
             <div className="w-2xl absolute bg-white border mt-1 w-full max-h-60 overflow-auto z-10 shadow-lg">
@@ -396,6 +398,14 @@ export default function OrderForm() {
               </div>
             ))}
           </div>
+        </div>
+        <div className="flex items-center gap-x-2 mt-4">
+          <Switch
+            id="draft-order"
+            checked={isDraft}
+            onCheckedChange={() => setIsDraft((prev) => !prev)}
+          />
+          <Label htmlFor="draft-order">Save as Draft Order</Label>
         </div>
         <div className="max-w-2xl">
           {addresses.length > 0 && (
