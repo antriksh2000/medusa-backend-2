@@ -1,10 +1,9 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
-import { Container } from "@medusajs/ui";
+import { Button, Container, Input } from "@medusajs/ui";
 import { DetailWidgetProps, AdminCustomer } from "@medusajs/framework/types";
 import { useState } from "react";
 
 const CustomerWidget = ({ data }: DetailWidgetProps<AdminCustomer>) => {
-
   const [vatNo, setVatNo] = useState(data?.metadata?.vat_no ?? "");
 
   const updateVAT = async () => {
@@ -14,17 +13,20 @@ const CustomerWidget = ({ data }: DetailWidgetProps<AdminCustomer>) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:9000/admin/customers/${data.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          metadata: {
-            vat_no:vatNo
-          }, // Updated value from input field
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_API_URL}admin/customers/${data.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            metadata: {
+              vat_no: vatNo,
+            }, // Updated value from input field
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -39,25 +41,29 @@ const CustomerWidget = ({ data }: DetailWidgetProps<AdminCustomer>) => {
 
   return (
     <Container className="divide-y p-0">
-      <div className="flex items-center justify-evenly px-6 py-4">
-        <h2>VAT Number</h2>
-        <input
-          type="text"
-          placeholder="VAT"
-          className="border border-gray-300 rounded-lg p-2"
-          value={vatNo as string}
-          onChange={(e) => setVatNo(e.target.value)} 
-        />
-        <button className="bg-blue-200 p-3 rounded-lg" onClick={updateVAT}>
-          Submit
-        </button>
+      <div className="flex items-center gap-10 justify-between px-6 py-4">
+        <div className="flex flex-row items-center gap-2">
+          <h2>Add VAT Number</h2>
+          <Input
+            type="text"
+            placeholder="VAT"
+            className="border border-gray-300 rounded-lg p-2"
+            value={vatNo as string}
+            onChange={(e) => setVatNo(e.target.value)}
+          />
+        </div>
+        <div>
+          <Button variant="secondary" onClick={updateVAT}>
+            Submit
+          </Button>
+        </div>
       </div>
     </Container>
   );
 };
 
 export const config = defineWidgetConfig({
-  zone: "customer.details.after",
+  zone: "customer.details.before",
 });
 
 export default CustomerWidget;

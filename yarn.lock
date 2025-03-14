@@ -2072,12 +2072,12 @@
   resolved "https://registry.npmjs.org/@medusajs/inventory/-/inventory-2.6.0.tgz"
   integrity sha512-tJ1wmscMudBrBNdBnHszEC6VIVRS0NzowqGcl7UJXfaetgtXbOeRJLnGaJYahgTZiSeGD/z99f4PhPLFZlhAgQ==
 
-"@medusajs/js-sdk@^2.6.0":
-  version "2.6.0"
-  resolved "https://registry.npmjs.org/@medusajs/js-sdk/-/js-sdk-2.6.0.tgz"
-  integrity sha512-VzIdcAFgXxf3KUduE2XYUSBbXw+r1Usug3fghnHEfRfAQ7ZCQtpEg/1qwHWozr7KNZsvD7lha9LcVaiD/AC0XQ==
+"@medusajs/js-sdk@^2.6.0", "@medusajs/js-sdk@^2.6.1":
+  version "2.6.1"
+  resolved "https://registry.npmjs.org/@medusajs/js-sdk/-/js-sdk-2.6.1.tgz"
+  integrity sha512-X7gTuWSIEocBefs5Sqti+bax2zlXpsYDvFFZjKLAwLgxQdb4QJT3j8HXgRVkWo9Lcmjs1sL/wenmnYUgDxGtdQ==
   dependencies:
-    "@medusajs/types" "^2.6.0"
+    "@medusajs/types" "2.6.1"
     fetch-event-stream "^0.1.5"
     qs "^6.12.1"
 
@@ -2287,10 +2287,10 @@
     get-port "^5.1.0"
     randomatic "^3.1.1"
 
-"@medusajs/types@^2.6.0":
-  version "2.6.0"
-  resolved "https://registry.npmjs.org/@medusajs/types/-/types-2.6.0.tgz"
-  integrity sha512-xxjBmnFjtBnO0ChWryPJIGK6dvCR/LMVKWIzpf6L6M+YwQzw1JyLBJx5lXDWyMOSzy7Kz8MyRUDu0fY1NNyT3Q==
+"@medusajs/types@^2.6.0", "@medusajs/types@^2.6.1", "@medusajs/types@2.6.1":
+  version "2.6.1"
+  resolved "https://registry.npmjs.org/@medusajs/types/-/types-2.6.1.tgz"
+  integrity sha512-cysEyeh/h1D3mkYSeaoo6fjpfCqHUGTaIoPLUxU3e2oyJ5GhwdpKB4N3mdkUFBSWmuWn5x7eLAwb7DqM4UzX+w==
   dependencies:
     bignumber.js "^9.1.2"
 

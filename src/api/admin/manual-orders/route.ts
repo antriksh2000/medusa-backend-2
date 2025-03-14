@@ -12,6 +12,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       additional_data: {
         sync_oms: true,
       },
+
     },
   });
 
